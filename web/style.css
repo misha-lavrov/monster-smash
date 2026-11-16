@@ -1,0 +1,237 @@
+/* =====================================================================
+   🎨 ВИГЛЯД ГРИ (CSS)
+   Змінюй кольори нижче → збережи файл (Ctrl+S) → сторінка оновиться САМА!
+   Колір можна писати словом (purple, orange, hotpink) або кодом (#ff00aa).
+   ===================================================================== */
+:root {
+  --bg-top:    #1b1033;   /* ✏️ фон: колір зверху */
+  --bg-bottom: #4a1f7a;   /* ✏️ фон: колір знизу */
+  --accent:    #ffcc00;   /* ✏️ колір кнопки та заголовка */
+  --hp-color:  #4cd964;   /* ✏️ колір смужки здоров'я */
+  --glow:      #ff3d71;   /* ✏️ сяйво навколо монстра */
+}
+
+/* ---------------------------------------------------------------------
+   Далі — «технічна» частина вигляду. Можна не чіпати 🙂
+   --------------------------------------------------------------------- */
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding: 14px 16px 24px;
+  display: flex;
+  justify-content: center;
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  color: #fff;
+  background: linear-gradient(180deg, var(--bg-top), var(--bg-bottom)) fixed;
+}
+
+.card {
+  width: min(600px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ----- шапка ----- */
+header { text-align: center; }
+.school { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; opacity: .7; }
+h1 {
+  margin: 4px 0 8px;
+  font-size: clamp(24px, 5vw, 34px);
+  color: var(--accent);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, .35);
+}
+.score {
+  display: inline-block;
+  padding: 4px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .13);
+  font-size: 17px;
+}
+.score b { display: inline-block; font-size: 22px; }
+.score b.bump { animation: bump .45s ease; }
+
+/* ----- арена з монстром ----- */
+.arena {
+  position: relative;
+  width: 100%;
+  height: clamp(170px, 30vh, 240px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.arena::before {                       /* сяйво за монстром */
+  content: "";
+  position: absolute;
+  width: 62%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--glow);
+  opacity: .35;
+  filter: blur(48px);
+}
+.monster-wrap { position: relative; animation: float 2.8s ease-in-out infinite; }
+.monster {
+  display: block;
+  font-size: clamp(110px, 20vh, 170px);
+  line-height: 1;
+  user-select: none;
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, .45));
+}
+.monster.hurt  { animation: shake .3s ease; filter: drop-shadow(0 0 22px #ff2d55) brightness(1.5); }
+.monster.dead  { animation: die .9s ease-in forwards; }
+.monster.spawn { animation: pop .5s cubic-bezier(.2, 1.6, .4, 1); }
+
+/* ----- цифри шкоди, що злітають ----- */
+.floaters { position: absolute; inset: 0; pointer-events: none; }
+.floater {
+  position: absolute;
+  left: calc(50% + var(--x, 0px));
+  top: 28%;
+  transform: translateX(-50%);
+  font-size: 34px;
+  font-weight: 800;
+  white-space: nowrap;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, .55);
+  animation: rise 1s ease-out forwards;
+}
+.floater.crit { color: var(--accent); font-size: 46px; }
+
+.spark {                               /* вибух, коли монстр помирає */
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  font-size: 26px;
+  pointer-events: none;
+  animation: fly .8s ease-out forwards;
+}
+
+/* ----- ім'я та здоров'я ----- */
+.monster-info { width: 100%; }
+.monster-name { text-align: center; font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+.hpbar {
+  position: relative;
+  height: 30px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, .45);
+  border: 2px solid rgba(255, 255, 255, .25);
+}
+.hpfill {
+  height: 100%;
+  width: 100%;
+  background: var(--hp-color);
+  transition: width .35s ease, background .35s ease;
+}
+.hpfill[data-level="mid"] { background: #ffb020; }
+.hpfill[data-level="low"] { background: #ff4757; }
+.hpbar span {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  text-shadow: 0 1px 2px #000;
+}
+
+/* ----- кнопка ----- */
+.hit {
+  width: 100%;
+  padding: 14px 20px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--accent);
+  color: #2a1245;
+  font-family: inherit;
+  font-size: 28px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, .35);
+  transition: transform .06s ease, box-shadow .06s ease, filter .15s ease;
+}
+.hit small { display: block; font-size: 13px; font-weight: 600; opacity: .65; }
+.hit:hover  { filter: brightness(1.08); }
+.hit:active { transform: translateY(5px); box-shadow: 0 1px 0 rgba(0, 0, 0, .35); }
+
+/* ----- розмова з сервером ----- */
+.talk { width: 100%; }
+.talk h2 { margin: 6px 0 6px; font-size: 14px; font-weight: 600; opacity: .85; }
+.log {
+  height: 9.4em;                   /* фіксована висота: сторінка не «стрибає» */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;       /* найновіше — знизу, старе виштовхується вгору */
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #0b0716;
+  border: 1px solid rgba(255, 255, 255, .12);
+  font: 13px/1.45 Consolas, "Courier New", monospace;
+  overflow: hidden;
+}
+.log div { flex: none; white-space: pre-wrap; word-break: break-all; }
+.log .out { color: #7cc4ff; }
+.log .in  { color: #8dff9b; }
+
+/* ----- попередження про сервер ----- */
+.banner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 10;
+  padding: 10px 16px;
+  text-align: center;
+  font-weight: 700;
+  background: #ff9f1a;
+  color: #2a1245;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .4);
+}
+.banner.error { background: #ff4757; color: #fff; }
+
+/* ----- низькі екрани (наприклад, половина ноутбука 1366×768 поруч із редактором) ----- */
+@media (max-height: 720px) {
+  body { padding-top: 8px; }
+  .card { gap: 8px; }
+  .school { display: none; }
+  h1 { margin: 0 0 6px; font-size: 26px; }
+  .arena { height: 150px; }
+  .monster { font-size: 104px; }
+  .monster-name { font-size: 19px; margin-bottom: 4px; }
+  .hpbar { height: 26px; }
+  .hit { padding: 9px 20px; font-size: 24px; }
+  .log { height: 8.2em; }
+}
+
+/* ----- анімації ----- */
+@keyframes float { 50% { transform: translateY(-10px); } }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-14px) rotate(-5deg); }
+  40% { transform: translateX(12px)  rotate(4deg); }
+  60% { transform: translateX(-8px); }
+  80% { transform: translateX(5px); }
+}
+@keyframes die {
+  0%   { transform: scale(1)    rotate(0);      opacity: 1; }
+  35%  { transform: scale(1.25) rotate(-12deg); opacity: 1; }
+  100% { transform: scale(0)    rotate(200deg); opacity: 0; }
+}
+@keyframes pop {
+  0%   { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes rise {
+  0%   { transform: translate(-50%, 0)     scale(.6); opacity: 0; }
+  15%  { transform: translate(-50%, -10px) scale(1.15); opacity: 1; }
+  100% { transform: translate(-50%, -90px) scale(1);   opacity: 0; }
+}
+@keyframes fly {
+  from { transform: translate(-50%, -50%) scale(1);  opacity: 1; }
+  to   { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.3); opacity: 0; }
+}
+@keyframes bump { 40% { transform: scale(1.6); color: var(--accent); } }

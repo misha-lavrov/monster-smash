@@ -1,0 +1,23 @@
+# --- результат збірки ---
+out/
+*.class
+
+# --- портативний JDK: копіюється флешкою, у git НЕ кладемо (~300 МБ) ---
+jdk/
+
+# --- службові позначки конкретного комп'ютера ---
+STATION
+_original/
+
+# --- IntelliJ: налаштування проєкту лишаємо, особисте — ігноруємо ---
+.idea/workspace.xml
+.idea/shelf/
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/dictionaries/
+.idea/httpRequests/
+.idea/caches/
+.idea/*.iws
+
+# --- VS Code ---
+.vscode/

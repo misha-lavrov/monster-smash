@@ -1,0 +1,5 @@
+# Скрипти Windows МУСЯТЬ мати закінчення рядків CRLF, інакше cmd.exe плутається в мітках (goto).
+* text=auto
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf

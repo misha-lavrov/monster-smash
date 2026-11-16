@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Побий монстра!</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E⚔️%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Червоне попередження, коли сервер не відповідає (наприклад, перезапускається) -->
+  <div id="banner" class="banner" hidden></div>
+
+  <div class="card">
+
+    <header>
+      <div class="school">ОІПЗ · програмування · день відкритих дверей</div>
+      <h1>⚔️ <span id="hero">…</span> проти монстрів</h1>
+      <div class="score">🏆 Переможено: <b id="kills">0</b></div>
+    </header>
+
+    <section id="arena" class="arena">
+      <div class="monster-wrap"><div id="monster" class="monster">⏳</div></div>
+      <div id="floaters" class="floaters"></div>
+    </section>
+
+    <div class="monster-info">
+      <div id="monsterName" class="monster-name">…</div>
+      <div class="hpbar">
+        <div id="hpFill" class="hpfill" data-level="ok"></div>
+        <span id="hpText">0 / 0</span>
+      </div>
+    </div>
+
+    <button id="hitBtn" class="hit" type="button">⚔️ ВДАРИТИ <small>або натисни пробіл</small></button>
+
+    <section class="talk">
+      <h2>📡 Розмова браузера з Java-сервером</h2>
+      <div id="log" class="log"></div>
+    </section>
+
+  </div>
+
+  <!--
+     🕵️ Ого, ти зазирнув у код сторінки! Так роблять справжні дослідники кібербезпеки.
+     Ось твій прапорець:   OIPZ{ctrl_u_is_a_superpower}
+     Покажи його викладачеві — отримаєш приз!
+  -->
+
+  <script src="app.js"></script>
+</body>
+</html>
