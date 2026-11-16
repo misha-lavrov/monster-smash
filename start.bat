@@ -4,20 +4,21 @@ rem  start.bat  -  build the program and (re)start the game server
 rem
 rem  Double-click = restart with the NEW code. This window closes by itself,
 rem  the server keeps running in a minimized window (title OIPZ-SERVER-8765).
+rem  If the game page is not open in the browser, Chrome opens it by itself.
 rem
-rem    start.bat show   run the server in THIS window (you can see its log)
-rem    start.bat open   also open the browser when the server is ready
+rem    start.bat show     run the server in THIS window (you can see its log)
+rem    start.bat noopen   do not open the browser
 rem ======================================================================
 chcp 65001 >nul
 setlocal
 cd /d "%~dp0"
 if not defined PORT set "PORT=8765"
 set "SHOW="
-set "OPEN="
+set "NOOPEN="
 if /i "%~1"=="show" set "SHOW=1"
-if /i "%~1"=="open" set "OPEN=1"
+if /i "%~1"=="noopen" set "NOOPEN=1"
 if /i "%~2"=="show" set "SHOW=1"
-if /i "%~2"=="open" set "OPEN=1"
+if /i "%~2"=="noopen" set "NOOPEN=1"
 if not exist out mkdir out
 
 echo.
@@ -42,12 +43,25 @@ echo  [2/3] Starting the server...
 start "OIPZ-SERVER-%PORT%" /min cmd /c ""%JAVA%" %JOPTS% -cp out Main %PORT% > out\server.log 2>&1"
 
 echo  [3/3] Waiting for the server to answer...
+if defined NOOPEN goto wait_only
+call "%~dp0tools\wait-server.bat" %PORT% page
+set "WS=%errorlevel%"
+if "%WS%"=="0" goto ready
+if "%WS%"=="3" goto open_page
+goto server_failed
+
+:wait_only
 call "%~dp0tools\wait-server.bat" %PORT%
 if errorlevel 1 goto server_failed
+goto ready
 
+:open_page
+echo  The game page is not open - opening the browser...
+call "%~dp0tools\open-browser.bat" "http://localhost:%PORT%"
+
+:ready
 echo.
 echo  READY!   http://localhost:%PORT%
-if defined OPEN start "" "http://localhost:%PORT%"
 exit /b 0
 
 :run_here

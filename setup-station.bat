@@ -52,5 +52,5 @@ echo  [4/4] running the PC check...
 set "NOPAUSE=1"
 call "%~dp0check.bat"
 echo.
-pause
+if not defined OIPZ_NOPAUSE pause
 exit /b 0

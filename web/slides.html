@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Хто це все написав? — презентація</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🐉%3C/text%3E%3C/svg%3E">
+<!--
+  ПРЕЗЕНТАЦІЯ: частина 1 — про професію, частина 2 — як працює програма (клієнт і сервер).
+
+  Відкрити:  двічі клікни slides.bat   (або відкрий http://localhost:8765/slides.html, коли гра запущена)
+  Клавіші:   →  /  PageDown  — далі        ←  /  PageUp — назад       Home / End — на початок / в кінець
+             F — на весь екран             R — програти анімацію ще раз
+             T — запустити/зупинити таймер (на слайді «Твоя черга»)   B — чорний екран
+  Як редагувати: кожен слайд — це блок <section class="slide"> нижче. Міняй текст між тегами — і оновлюй сторінку (F5).
+  Таймер на слайді «Твоя черга»: за замовчуванням 2:00; адреса slides.html?timer=90 — це 1:30.
+  Для PDF: відкрий сторінку, Ctrl+P → «Зберегти як PDF» (розмір і поля вже налаштовані).
+-->
+<style>
+  :root {
+    --bg1: #1b1033; --bg2: #4a1f7a;
+    --accent: #ffcc00; --cyan: #4dd6ff; --green: #7dff9b; --pink: #ff6fae; --red: #ff5c7a;
+    --ink: #ffffff; --muted: #cbb8ff;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden; background: #0b0618; color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  }
+
+  /* Сцена 1280×720: масштабується під вікно, тому все виглядає однаково на проєкторі й на пів-екрана */
+  #stage {
+    position: absolute; left: 50%; top: 50%; width: 1280px; height: 720px;
+    transform: translate(-50%, -50%); transform-origin: center center; overflow: hidden;
+    background:
+      radial-gradient(900px 520px at 85% 0%, rgba(150, 80, 255, .35), transparent 65%),
+      radial-gradient(700px 420px at 0% 100%, rgba(77, 214, 255, .16), transparent 65%),
+      linear-gradient(160deg, var(--bg1), var(--bg2));
+  }
+
+  .slide {
+    position: absolute; inset: 0; padding: 48px 70px;
+    display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+    opacity: 0; visibility: hidden; transform: translateX(70px);
+    transition: opacity .45s ease, transform .45s ease, visibility 0s .45s;
+  }
+  .slide.before { transform: translateX(-70px); }
+  .slide.active { opacity: 1; visibility: visible; transform: none; transition: opacity .45s ease, transform .45s ease; }
+
+  h1 { margin: 0 0 24px; font-size: 92px; line-height: 1.05; font-weight: 800; letter-spacing: -1px; }
+  h2 { margin: 0 0 22px; font-size: 62px; line-height: 1.1; font-weight: 800; color: var(--accent); }
+  .kicker { margin-bottom: 14px; font-size: 24px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+  .sub    { max-width: 1000px; font-size: 32px; line-height: 1.3; color: #eadfff; }
+  .badge  { position: absolute; top: 26px; left: 30px; padding: 6px 16px; border-radius: 999px; background: var(--accent); color: #2a1245; font-weight: 800; font-size: 20px; letter-spacing: .08em; }
+  code, .mono { font-family: Consolas, "Courier New", monospace; }
+
+  /* поява елементів по черзі, коли слайд стає активним */
+  .pop { opacity: 0; }
+  .slide.active .pop { animation: pop .55s cubic-bezier(.2, 1.5, .4, 1) both; animation-delay: var(--d, 0s); }
+  @keyframes pop { 0% { opacity: 0; transform: translateY(26px) scale(.85); } 100% { opacity: 1; transform: none; } }
+  @keyframes floaty { 50% { transform: translateY(-14px); } }
+  @keyframes wiggle { 20% { transform: rotate(-6deg); } 40% { transform: rotate(6deg); } 60% { transform: rotate(-3deg); } 80% { transform: rotate(3deg); } }
+
+  /* ---------- 1. Гачок ---------- */
+  .dragon-float { position: absolute; right: 36px; top: 16px; font-size: 104px; animation: floaty 3s ease-in-out infinite; filter: drop-shadow(0 12px 18px rgba(0,0,0,.45)); }
+  .bubbles { display: flex; gap: 26px; margin: 8px 0 34px; }
+  .bubble  { width: 250px; padding: 22px 12px 18px; border-radius: 26px; background: rgba(255,255,255,.12); border: 2px solid rgba(255,255,255,.2); font-size: 78px; line-height: 1; }
+  .bubble span { display: block; margin-top: 10px; font-size: 26px; font-weight: 700; }
+  .answer { margin: 0; font-size: 46px; font-weight: 700; }
+  .answer b { color: var(--accent); }
+
+  /* ---------- 2. ОІПЗ ---------- */
+  .big-abbr { margin: 0 0 4px; font-size: 150px; line-height: 1; font-weight: 900; color: var(--accent); letter-spacing: 6px; text-shadow: 0 6px 0 rgba(0,0,0,.3); }
+  .path { display: flex; align-items: center; gap: 16px; margin: 34px 0 30px; }
+  .step { width: 330px; padding: 20px 16px; border-radius: 22px; background: rgba(255,255,255,.12); border: 2px solid rgba(255,255,255,.2); font-size: 28px; font-weight: 600; line-height: 1.25; }
+  .step i { display: block; margin-bottom: 8px; font-style: normal; font-size: 62px; line-height: 1; }
+  .arrow { font-size: 54px; color: var(--accent); }
+  .pill { display: inline-block; padding: 12px 30px; border-radius: 999px; background: var(--accent); color: #2a1245; font-size: 32px; font-weight: 800; }
+
+  /* ---------- 3. Що в нас ще є ---------- */
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; width: 1090px; }
+  .card  { display: flex; align-items: center; gap: 22px; padding: 22px 26px; border-radius: 24px; background: rgba(255,255,255,.12); border: 2px solid rgba(255,255,255,.2); text-align: left; }
+  .card i { flex: none; font-style: normal; font-size: 72px; line-height: 1; }
+  .card b { display: block; font-size: 33px; line-height: 1.15; }
+  .card span { display: block; margin-top: 6px; font-size: 24px; color: #eadfff; line-height: 1.25; }
+  .card.hot { border-color: var(--accent); background: rgba(255,204,0,.14); }
+
+  /* ---------- 4. Куди це веде ---------- */
+  .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 18px; width: 1060px; margin-bottom: 30px; }
+  .chip  { padding: 16px 30px; border-radius: 999px; background: rgba(255,255,255,.14); border: 2px solid rgba(255,255,255,.22); font-size: 36px; font-weight: 700; }
+  .more  { margin: 0 0 14px; font-size: 52px; font-weight: 800; }
+  .hint  { margin-top: 26px; font-size: 38px; font-weight: 700; color: var(--accent); }
+
+  /* ---------- 5. Дві половинки ---------- */
+  .halves { display: flex; align-items: center; gap: 28px; margin: 6px 0 24px; }
+  .half   { width: 440px; padding: 24px 22px; border-radius: 28px; border: 3px solid; }
+  .half.client { background: rgba(77,214,255,.12); border-color: var(--cyan); }
+  .half.server { background: rgba(125,255,155,.12); border-color: var(--green); }
+  .half i { display: block; font-style: normal; font-size: 92px; line-height: 1; margin-bottom: 8px; }
+  .half h3 { margin: 0 0 6px; font-size: 44px; }
+  .half.client h3 { color: var(--cyan); } .half.server h3 { color: var(--green); }
+  .half p { margin: 0; font-size: 28px; line-height: 1.3; color: #eadfff; }
+  .link { font-size: 70px; color: var(--accent); animation: floaty 2s ease-in-out infinite; }
+  .pizza { margin: 0; font-size: 31px; color: #eadfff; }
+  .pizza b { color: var(--accent); }
+
+  /* ---------- 6. Запит → відповідь ---------- */
+  .flow { position: relative; width: 1140px; height: 450px; margin-top: 4px; }
+  .box  { position: absolute; top: 20px; width: 330px; height: 330px; padding: 16px; border-radius: 28px; border: 3px solid; }
+  .box.l { left: 0; background: rgba(77,214,255,.12); border-color: var(--cyan); }
+  .box.r { right: 0; background: rgba(125,255,155,.12); border-color: var(--green); }
+  .box h3 { margin: 0 0 4px; font-size: 38px; line-height: 1.1; }
+  .box h3 small { display: block; margin-top: 2px; font-size: 22px; font-weight: 600; color: #eadfff; }
+  .box.l h3 { color: var(--cyan); } .box.r h3 { color: var(--green); }
+  .box .face { margin-top: 6px; font-size: 92px; line-height: 1; }
+  .box.l .face { text-align: left; padding-left: 14px; }
+  .btnfake { display: inline-block; margin-top: 8px; padding: 10px 24px; border-radius: 14px; background: var(--accent); color: #2a1245; font-size: 28px; font-weight: 800; }
+  .gear { margin-top: 12px; font-size: 110px; line-height: 1; display: inline-block; }
+  .says { position: absolute; left: 0; right: 0; bottom: 14px; font-size: 22px; color: #eadfff; }
+  .env  { position: absolute; top: 150px; font-size: 76px; opacity: 0; }
+  .lbl  { position: absolute; width: 380px; font-size: 27px; font-weight: 700; line-height: 1.2; opacity: 0; }
+  .lbl.req { left: 380px; top: 64px; color: var(--cyan); }
+  .lbl.res { left: 380px; top: 258px; color: var(--green); }
+  .lbl small { display: block; margin-top: 4px; font: 600 20px Consolas, "Courier New", monospace; color: #fff; opacity: .85; }
+  .dmg  { position: absolute; left: 150px; top: 100px; font-size: 46px; white-space: nowrap; font-weight: 900; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.5); opacity: 0; }
+  .flow .caption { position: absolute; left: 0; right: 0; bottom: 0; font-size: 30px; font-weight: 700; opacity: 0; }
+  .flow .caption b { color: var(--accent); }
+  .replay { position: absolute; right: 0; bottom: 0; }
+
+  .flow.play .btnfake   { animation: press .35s .15s both; }
+  .flow.play .env.req   { animation: fly-r .9s .5s both; }
+  .flow.play .lbl.req   { animation: fadein .4s .5s both; }
+  .flow.play .gear      { animation: spin 1.2s 1.5s both linear; }
+  .flow.play .says      { animation: fadein .4s 1.5s both; }
+  .flow.play .env.res   { animation: fly-l .9s 2.8s both; }
+  .flow.play .lbl.res   { animation: fadein .4s 2.8s both; }
+  .flow.play .dmg       { animation: rise 1.2s 3.8s both; }
+  .flow.play .caption   { animation: fadein .5s 4.2s both; }
+  .says { opacity: 0; }
+  @keyframes press  { 50% { transform: scale(.88); filter: brightness(1.4); } }
+  @keyframes fly-r  { 0% { left: 340px; opacity: 0; } 8% { opacity: 1; } 100% { left: 725px; opacity: 1; } }
+  @keyframes fly-l  { 0% { left: 725px; opacity: 0; } 8% { opacity: 1; } 100% { left: 340px; opacity: 1; } }
+  @keyframes spin   { to { transform: rotate(720deg); } }
+  @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes rise   { 0% { opacity: 0; transform: translateY(30px) scale(.6); } 25% { opacity: 1; transform: none; } 100% { opacity: 1; transform: translateY(-26px); } }
+  .env.res { transform: scaleX(-1); }
+
+  /* ---------- 7. Живий сервер ---------- */
+  .live { display: flex; gap: 28px; align-items: stretch; width: 1140px; margin-top: 6px; }
+  .mini { position: relative; width: 400px; padding: 18px 18px 20px; border-radius: 28px; background: rgba(77,214,255,.12); border: 3px solid var(--cyan); }
+  .mini h3, .jsonbox h3 { margin: 0 0 6px; font-size: 28px; }
+  .mini h3 { color: var(--cyan); } .jsonbox h3 { color: var(--green); }
+  .mini-monster { font-size: 120px; line-height: 1.1; }
+  .mini-name { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  .mini-hp { position: relative; height: 30px; border-radius: 999px; overflow: hidden; background: rgba(0,0,0,.45); border: 2px solid rgba(255,255,255,.25); }
+  .mini-hp i { display: block; height: 100%; width: 100%; background: #4cd964; transition: width .35s ease; }
+  .mini-hp b { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; text-shadow: 0 1px 2px #000; }
+  .floatdmg { position: absolute; left: 150px; top: 60px; font-size: 48px; font-weight: 900; text-shadow: 0 3px 0 rgba(0,0,0,.5); opacity: 0; pointer-events: none; }
+  .floatdmg.go { animation: rise 1.1s both; }
+  .jsonbox { flex: 1; padding: 18px 20px; border-radius: 28px; background: rgba(125,255,155,.1); border: 3px solid var(--green); text-align: left; }
+  .jsonout { height: 300px; margin: 0; padding: 12px 14px; overflow: hidden; border-radius: 14px; background: #0b0716; font: 600 22px/1.3 Consolas, "Courier New", monospace; white-space: pre; }
+  .jsonout .ln { display: block; opacity: 0; animation: fadein .25s both; animation-delay: calc(var(--i) * 70ms); }
+  .jsonout .k { color: var(--cyan); } .jsonout .s { color: var(--green); } .jsonout .n { color: var(--accent); } .jsonout .b { color: var(--pink); }
+  .jsonout .note { color: #ffb3b3; font-family: "Segoe UI", sans-serif; white-space: normal; }
+  .live-actions { display: flex; gap: 16px; justify-content: center; margin-top: 16px; }
+  button.big { padding: 12px 26px; border: 0; border-radius: 16px; background: var(--accent); color: #2a1245; font: 800 28px "Segoe UI", system-ui, sans-serif; cursor: pointer; box-shadow: 0 5px 0 rgba(0,0,0,.35); }
+  button.big.alt { background: rgba(255,255,255,.16); color: #fff; box-shadow: none; border: 2px solid rgba(255,255,255,.3); }
+  button.big:active { transform: translateY(3px); }
+  .live-note { margin: 12px 0 0; font-size: 26px; color: #eadfff; }
+
+  /* ---------- 8. Практика ---------- */
+  .practice { display: flex; gap: 34px; align-items: stretch; width: 1140px; }
+  .steps3 { flex: 1; display: flex; flex-direction: column; gap: 14px; text-align: left; }
+  .s3 { display: flex; align-items: center; gap: 20px; padding: 14px 22px; border-radius: 22px; background: rgba(255,255,255,.12); border: 2px solid rgba(255,255,255,.2); font-size: 31px; font-weight: 700; }
+  .s3 i { flex: none; width: 68px; height: 68px; border-radius: 50%; background: var(--accent); color: #2a1245; font-style: normal; font-size: 36px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+  .s3 small { display: block; font-size: 22px; font-weight: 500; color: #eadfff; }
+  .timerbox { width: 400px; padding: 18px 16px; border-radius: 28px; background: rgba(0,0,0,.32); border: 3px solid var(--accent); display: flex; flex-direction: column; justify-content: center; align-items: center; }
+  .timer { font: 900 120px/1 Consolas, "Courier New", monospace; color: var(--accent); }
+  .timer.low { color: var(--red); animation: wiggle 1s infinite; }
+  .timer-msg { min-height: 40px; margin: 8px 0 12px; font-size: 30px; font-weight: 800; }
+  .missions { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; width: 1140px; margin-top: 24px; }
+  .mission { padding: 10px 22px; border-radius: 999px; background: rgba(255,255,255,.14); border: 2px solid rgba(255,255,255,.22); font-size: 28px; font-weight: 700; }
+  .mission.bonus { border-color: var(--accent); }
+
+  /* ---------- 9. Питання ---------- */
+  .qmark { font-size: 260px; line-height: 1; font-weight: 900; color: var(--accent); text-shadow: 0 10px 0 rgba(0,0,0,.3); animation: floaty 3s ease-in-out infinite; }
+
+  /* ---------- бонус: JSON, чит, масштаб ---------- */
+  .duo { display: flex; align-items: center; gap: 30px; margin-top: 8px; }
+  .form { width: 420px; padding: 24px 28px; border-radius: 24px; background: rgba(255,255,255,.95); color: #2a1245; text-align: left; font-size: 32px; line-height: 1.7; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+  .form b { color: #7a3fd1; }
+  .codebox { width: 520px; padding: 20px 26px; border-radius: 24px; background: #0b0716; text-align: left; font: 600 34px/1.5 Consolas, "Courier New", monospace; border: 2px solid rgba(255,255,255,.2); }
+  .codebox .k { color: var(--cyan); } .codebox .s { color: var(--green); } .codebox .n { color: var(--accent); }
+  .eq { font-size: 64px; color: var(--accent); }
+  .cheat { width: 520px; padding: 22px 26px; border-radius: 24px; background: #0b0716; text-align: left; font: 600 28px/1.5 Consolas, "Courier New", monospace; border: 2px solid var(--red); }
+  .cheat .c { color: #7f7aa8; } .cheat .bad { color: var(--red); }
+  .verdict { width: 520px; padding: 22px 26px; border-radius: 24px; background: rgba(125,255,155,.12); border: 3px solid var(--green); font-size: 32px; font-weight: 700; line-height: 1.3; text-align: left; }
+  .crowd { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px 6px; width: 680px; font-size: 54px; }
+  .crowd span { animation: floaty 2.4s ease-in-out infinite; animation-delay: calc(var(--i) * 120ms); }
+  .server-big { font-size: 130px; line-height: 1; white-space: nowrap; }
+
+  /* ---------- навігація ---------- */
+  .bar { position: fixed; left: 0; bottom: 0; height: 5px; width: 0; background: var(--accent); transition: width .35s ease; z-index: 60; }
+  .hud { position: fixed; left: 0; right: 0; bottom: 10px; z-index: 50; display: flex; justify-content: center; align-items: center; gap: 14px; opacity: 0; transition: opacity .3s; pointer-events: none; }
+  body.hud-on .hud { opacity: 1; pointer-events: auto; }
+  .hud button { width: 44px; height: 44px; border: 0; border-radius: 50%; background: rgba(255,255,255,.22); color: #fff; font-size: 22px; cursor: pointer; }
+  .hud .count { min-width: 90px; text-align: center; font-size: 18px; font-weight: 700; color: #fff; text-shadow: 0 1px 3px #000; }
+  body.hud-off { cursor: none; }
+  #blackout { position: fixed; inset: 0; z-index: 100; background: #000; display: none; }
+  body.black #blackout { display: block; }
+
+  /* ---------- друк / PDF: кожен слайд — окрема сторінка 1280×720 ---------- */
+  @page { size: 1280px 720px; margin: 0; }
+  @media print {
+    html, body { height: auto; overflow: visible; background: #000; }
+    #stage { position: static; width: 1280px; height: auto; transform: none !important; overflow: visible; background: none; }
+    .slide { position: relative; width: 1280px; height: 720px; inset: auto; opacity: 1 !important; visibility: visible !important; transform: none !important;
+             page-break-after: always; break-after: page; overflow: hidden;
+             background: radial-gradient(900px 520px at 85% 0%, rgba(150,80,255,.35), transparent 65%), linear-gradient(160deg, var(--bg1), var(--bg2)); }
+    .pop, .flow *, .jsonout .ln { animation: none !important; opacity: 1 !important; transform: none; }
+    .flow .env.req { left: 340px; } .flow .env.res { left: 725px; }
+    .flow .lbl, .flow .env { opacity: 1 !important; }
+    .flow .says, .flow .caption, .flow .dmg { opacity: 1 !important; }
+    .hud, .bar, #blackout, .replay, .live-actions, .timerbox button { display: none !important; }
+    .dragon-float, .qmark, .link, .crowd span { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="stage">
+
+  <!-- ============ ЧАСТИНА 1 · ПРО ПРОФЕСІЮ (≈ 1:30) ============ -->
+
+  <!-- ===== СЛАЙД 1 · Гачок (20 с) ===== -->
+  <section class="slide" data-title="Хто це все написав?">
+    <div class="dragon-float" title="Привіт! Зараз ми з тобою побачимось 🙂">🐉</div>
+    <div class="kicker pop" style="--d:.1s">Питання на старті</div>
+    <h1 class="pop" style="--d:.25s">Хто це все написав?</h1>
+    <div class="bubbles">
+      <div class="bubble pop" style="--d:.9s">🎮<span>Ігри</span></div>
+      <div class="bubble pop" style="--d:1.2s">💬<span>Месенджери</span></div>
+      <div class="bubble pop" style="--d:1.5s">🏦<span>Банківські додатки</span></div>
+      <div class="bubble pop" style="--d:1.8s">🎵<span>Соцмережі</span></div>
+    </div>
+    <p class="answer pop" style="--d:2.6s">Програмісти. <b>Сьогодні — ви теж.</b> 😉</p>
+  </section>
+
+  <!-- ===== СЛАЙД 2 · Спеціальність ОІПЗ (25 с) ===== -->
+  <section class="slide" data-title="ОІПЗ">
+    <div class="kicker pop" style="--d:.1s">Наша спеціальність</div>
+    <div class="big-abbr pop" style="--d:.25s">ОІПЗ</div>
+    <div class="sub pop" style="--d:.5s">оператор обробки інформації та програмного забезпечення</div>
+    <div class="path">
+      <div class="step pop" style="--d:1s"><i>🖥</i>Як влаштований комп'ютер</div>
+      <div class="arrow pop" style="--d:1.3s">➜</div>
+      <div class="step pop" style="--d:1.5s"><i>📊</i>Робота з різними програмами</div>
+      <div class="arrow pop" style="--d:1.8s">➜</div>
+      <div class="step pop" style="--d:2s"><i>👨‍💻</i>Програмування</div>
+    </div>
+    <div class="pill pop" style="--d:2.5s">3 роки · мінімум теорії — максимум практики 🔧</div>
+  </section>
+
+  <!-- ===== СЛАЙД 3 · Що в нас ще є (25 с) ===== -->
+  <section class="slide" data-title="Що в нас ще є">
+    <h2 class="pop" style="--d:.1s">Що в нас ще є</h2>
+    <div class="cards">
+      <div class="card pop" style="--d:.5s"><i>🧩</i><div><b>Гурток програмування</b><span>навіть якщо ви ще не написали жодного рядка</span></div></div>
+      <div class="card pop" style="--d:.9s"><i>🏆</i><div><b>Олімпіади та змагання</b><span>перевірити себе й повезти кубок додому</span></div></div>
+      <div class="card hot pop" style="--d:1.3s"><i>🚩</i><div><b>CTF — змагання з кібербезпеки</b><span>знайти «прапорець» у системі. Усе легально!</span></div></div>
+      <div class="card pop" style="--d:1.7s"><i>⚡</i><div><b>Спортивне програмування</b><span>вже готуємось до перших стартів</span></div></div>
+    </div>
+  </section>
+
+  <!-- ===== СЛАЙД 4 · Куди це веде (20 с) ===== -->
+  <section class="slide" data-title="Куди це веде">
+    <h2 class="pop" style="--d:.1s">Куди це веде?</h2>
+    <div class="chips">
+      <div class="chip pop" style="--d:.5s">🛠 Підтримка користувачів</div>
+      <div class="chip pop" style="--d:.8s">🔎 Тестування</div>
+      <div class="chip pop" style="--d:1.1s">🌐 Адміністрування</div>
+      <div class="chip pop" style="--d:1.4s">👨‍💻 Розробка</div>
+    </div>
+    <div class="more pop" style="--d:1.9s">…і навчання далі 🎓</div>
+    <div class="sub pop" style="--d:2.2s">Почати можна з малого — і швидко рости.</div>
+    <div class="hint pop" style="--d:2.8s">А тепер подивимось, як це працює зсередини 👇</div>
+  </section>
+
+  <!-- ============ ЧАСТИНА 2 · ЯК ПРАЦЮЄ ПРОГРАМА (≈ 40 с + демо) ============ -->
+
+  <!-- ===== СЛАЙД 5 · Дві половинки (10 с) ===== -->
+  <section class="slide" data-title="Дві половинки">
+    <h2 class="pop" style="--d:.1s">Застосунок — це дві половинки</h2>
+    <div class="halves">
+      <div class="half client pop" style="--d:.6s">
+        <i>📱</i><h3>КЛІЄНТ</h3>
+        <p>«Обличчя»: те, що ти бачиш і на що тиснеш.<br>Браузер, додаток у телефоні.</p>
+      </div>
+      <div class="link pop" style="--d:1.1s">⇄</div>
+      <div class="half server pop" style="--d:1.4s">
+        <i>🧠</i><h3>СЕРВЕР</h3>
+        <p>«Мозок»: думає, рахує й пам'ятає.<br>Комп'ютер, що працює десь поруч або далеко.</p>
+      </div>
+    </div>
+    <p class="pizza pop" style="--d:2.1s">Як із піцою 🍕: <b>ти</b> замовляєш → <b>кухня</b> готує → ти отримуєш відповідь.</p>
+  </section>
+
+  <!-- ===== СЛАЙД 6 · Запит → відповідь (15 с, анімація сама) ===== -->
+  <section class="slide" data-title="Запит і відповідь" data-enter="flow">
+    <h2>Розмова: запит → відповідь</h2>
+    <div class="flow" id="flow">
+      <div class="box l">
+        <h3>🖥 Клієнт<small>(браузер)</small></h3>
+        <div class="face">🐉</div>
+        <div class="btnfake">⚔️ ВДАРИТИ</div>
+        <div class="dmg" id="flowDmg">-37 💥</div>
+      </div>
+      <div class="env req">✉️</div>
+      <div class="lbl req">Запит: «Вдарили! Скільки шкоди?»<small>POST /api/hit</small></div>
+      <div class="box r">
+        <h3>☁️ Сервер<small>(Java)</small></h3>
+        <div class="gear">⚙️</div>
+        <div class="says">Java рахує: випадкове число, крит?..</div>
+      </div>
+      <div class="env res">✉️</div>
+      <div class="lbl res">Відповідь: «37 шкоди!»<small>{"damage":37}</small></div>
+      <div class="caption">Браузер лише <b>питає й малює</b>. Рахує — <b>сервер</b>.</div>
+      <button class="big alt replay" id="flowReplay" title="Програти ще раз (R)">↻</button>
+    </div>
+  </section>
+
+  <!-- ===== СЛАЙД 7 · Спитай справжній сервер (15 с) ===== -->
+  <section class="slide" data-title="Справжній сервер" data-enter="live">
+    <h2>Спитаємо справжній сервер!</h2>
+    <div class="live">
+      <div class="mini">
+        <h3>👀 Що бачиш ти</h3>
+        <div class="mini-monster" id="miniMonster">🐉</div>
+        <div class="mini-name" id="miniName">Дракон</div>
+        <div class="mini-hp"><i id="miniHp"></i><b id="miniHpText">100 / 100</b></div>
+        <div class="floatdmg" id="miniDmg"></div>
+      </div>
+      <div class="jsonbox">
+        <h3>📡 Що відповів сервер</h3>
+        <pre class="jsonout" id="jsonOut"></pre>
+      </div>
+    </div>
+    <div class="live-actions">
+      <button class="big" id="btnHit">⚔️ Вдарити</button>
+      <button class="big alt" id="btnAsk">📡 Просто спитати</button>
+    </div>
+    <p class="live-note">Це JSON — «мова» серверів: <b>назва → значення</b>. Браузер перетворює її на картинку.</p>
+  </section>
+
+  <!-- ===== СЛАЙД 8 · Практика (1:50, таймер) ===== -->
+  <section class="slide" data-title="Твоя черга" data-enter="timer">
+    <h2>Твоя черга — змінюй гру!</h2>
+    <div class="practice">
+      <div class="steps3">
+        <div class="s3"><i>1</i><div>Зміни щось у коді<small>ім'я, силу удару, монстра</small></div></div>
+        <div class="s3"><i>2</i><div>Збережи — <code>Ctrl+S</code><small>IntelliJ зазвичай сам зберігає</small></div></div>
+        <div class="s3"><i>3</i><div>Натисни зелений ▶<small>сторінка праворуч оновиться сама</small></div></div>
+      </div>
+      <div class="timerbox">
+        <div class="timer" id="timer">2:00</div>
+        <div class="timer-msg" id="timerMsg"></div>
+        <button class="big" id="timerBtn">▶ Старт (T)</button>
+      </div>
+    </div>
+    <div class="missions">
+      <div class="mission">🏷 своє ім'я</div>
+      <div class="mission">💪 сила удару</div>
+      <div class="mission">🧟 свій монстр</div>
+      <div class="mission bonus">🎨 кольори</div>
+      <div class="mission bonus">🚩 знайди прапорець</div>
+    </div>
+  </section>
+
+  <!-- ===== СЛАЙД 9 · Питання (1:00) ===== -->
+  <section class="slide" data-title="Питання">
+    <div class="qmark">?</div>
+    <h1 class="pop" style="--d:.2s">Питання?</h1>
+    <div class="sub pop" style="--d:.6s">Запитайте про гурток програмування — розкажу, як долучитись.</div>
+    <div class="sub pop" style="--d:1s; margin-top:18px">Дякую, що були програмістами цілих 6 хвилин! 🙌</div>
+  </section>
+
+  <!-- ============ БОНУС (для гуртка або довших груп) ============ -->
+
+  <!-- ===== БОНУС 1 · JSON ===== -->
+  <section class="slide" data-title="Бонус: JSON">
+    <div class="badge">БОНУС</div>
+    <h2 class="pop" style="--d:.1s">JSON — це просто анкета</h2>
+    <div class="duo">
+      <div class="form pop" style="--d:.6s"><b>Ім'я:</b> Дракон<br><b>Здоров'я:</b> 100<br><b>Смайлик:</b> 🐉</div>
+      <div class="eq pop" style="--d:1.1s">=</div>
+      <div class="codebox pop" style="--d:1.4s">{<br>&nbsp;&nbsp;<span class="k">"name"</span>: <span class="s">"Дракон"</span>,<br>&nbsp;&nbsp;<span class="k">"hp"</span>: <span class="n">100</span>,<br>&nbsp;&nbsp;<span class="k">"emoji"</span>: <span class="s">"🐉"</span><br>}</div>
+    </div>
+    <p class="sub pop" style="--d:2s; margin-top:22px">Комп'ютери теж люблять порядок: <b>назва → значення</b>.</p>
+  </section>
+
+  <!-- ===== БОНУС 2 · Чому рахує сервер ===== -->
+  <section class="slide" data-title="Бонус: чому сервер">
+    <div class="badge">БОНУС</div>
+    <h2 class="pop" style="--d:.1s">Чому рахує сервер, а не браузер?</h2>
+    <div class="duo">
+      <div class="cheat pop" style="--d:.6s"><span class="c">// а якби браузер рахував шкоду…</span><br>damage = <span class="bad">999999999</span>;<br><span class="c">// F12 — і будь-хто це змінить 😈</span></div>
+      <div class="verdict pop" style="--d:1.3s">Тому важливі правила живуть <b style="color:var(--green)">на сервері</b>. Браузеру можна лише питати.</div>
+    </div>
+    <p class="sub pop" style="--d:2s; margin-top:22px">Саме такі «слабкі місця» шукають на змаганнях із кібербезпеки 🚩</p>
+  </section>
+
+  <!-- ===== БОНУС 3 · Багато гравців ===== -->
+  <section class="slide" data-title="Бонус: багато клієнтів">
+    <div class="badge">БОНУС</div>
+    <h2 class="pop" style="--d:.1s">А якщо гравців тисяча?</h2>
+    <div class="duo">
+      <div class="crowd pop" style="--d:.5s">
+        <span style="--i:0">📱</span><span style="--i:1">💻</span><span style="--i:2">📱</span><span style="--i:3">🖥</span><span style="--i:4">📱</span><span style="--i:5">💻</span><span style="--i:6">📱</span><span style="--i:7">🖥</span>
+        <span style="--i:8">💻</span><span style="--i:9">📱</span><span style="--i:10">🖥</span><span style="--i:11">📱</span><span style="--i:12">💻</span><span style="--i:13">📱</span><span style="--i:14">🖥</span><span style="--i:15">📱</span>
+      </div>
+      <div class="eq pop" style="--d:1.2s">➜</div>
+      <div class="server-big pop" style="--d:1.5s">☁️🧠</div>
+    </div>
+    <p class="sub pop" style="--d:2.2s; margin-top:20px">Один сервер відповідає тисячам клієнтів одночасно.<br><b style="color:var(--accent)">Щоб він не впав — і працюють бекенд-розробники.</b></p>
+  </section>
+
+</div>
+
+<div class="bar" id="bar"></div>
+<div class="hud" id="hud">
+  <button id="prev" title="Назад (←)">◀</button>
+  <div class="count" id="count">1 / 12</div>
+  <button id="next" title="Далі (→)">▶</button>
+  <button id="full" title="На весь екран (F)">⛶</button>
+</div>
+<div id="blackout"></div>
+
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const stage = $('stage');
+  const slides = [...document.querySelectorAll('.slide')];
+  const coreCount = slides.filter((s) => !s.querySelector('.badge')).length;   // слайди з позначкою БОНУС — не рахуємо
+  let cur = 0;
+
+  /* ---------- масштаб сцени під вікно ---------- */
+  function fit() {
+    const k = Math.min(innerWidth / 1280, innerHeight / 720);
+    stage.style.transform = 'translate(-50%, -50%) scale(' + k + ')';
+  }
+  addEventListener('resize', fit); fit();
+
+  /* ---------- перехід між слайдами ---------- */
+  function show(n) {
+    n = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, i) => { s.classList.toggle('active', i === n); s.classList.toggle('before', i < n); });
+    cur = n;
+    try { history.replaceState(null, '', '#' + (n + 1)); } catch (e) { /* file:// — не страшно */ }
+    $('bar').style.width = ((n + 1) / slides.length * 100) + '%';
+    $('count').textContent = n < coreCount ? (n + 1) + ' / ' + coreCount : 'Бонус ' + (n - coreCount + 1) + ' / ' + (slides.length - coreCount);
+    const enter = slides[n].dataset.enter;
+    if (enter === 'flow') playFlow();
+    if (enter === 'live') resetLive();
+    if (enter === 'timer') resetTimer();
+  }
+  const next = () => show(cur + 1);
+  const prev = () => show(cur - 1);
+
+  /* ---------- клавіші, миша, HUD ---------- */
+  addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.altKey || e.metaKey) return;
+    const k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { e.preventDefault(); next(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { e.preventDefault(); prev(); }
+    else if (k === 'Home') show(0);
+    else if (k === 'End') show(slides.length - 1);
+    else if (k === 'f' || k === 'F' || k === 'а' || k === 'А') toggleFull();
+    else if (k === 'r' || k === 'R' || k === 'к' || k === 'К') { const en = slides[cur].dataset.enter; if (en === 'flow') playFlow(); if (en === 'live') resetLive(); }
+    else if (k === 't' || k === 'T' || k === 'е' || k === 'Е') toggleTimer();
+    else if (k === 'b' || k === 'B' || k === 'и' || k === 'И') document.body.classList.toggle('black');
+  });
+  stage.addEventListener('click', (e) => {
+    if (e.target.closest('button, a')) return;
+    const x = e.clientX / innerWidth;
+    if (x > 0.7) next(); else if (x < 0.2) prev();
+  });
+  $('next').onclick = (e) => { next(); e.currentTarget.blur(); };
+  $('prev').onclick = (e) => { prev(); e.currentTarget.blur(); };
+  $('full').onclick = (e) => { toggleFull(); e.currentTarget.blur(); };
+  function toggleFull() {
+    if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {});
+  }
+  let hudTimer;
+  function wake() {
+    document.body.classList.add('hud-on'); document.body.classList.remove('hud-off');
+    clearTimeout(hudTimer);
+    hudTimer = setTimeout(() => { document.body.classList.remove('hud-on'); document.body.classList.add('hud-off'); }, 2200);
+  }
+  addEventListener('mousemove', wake); wake();
+
+  /* ---------- слайд 6: анімація «запит → відповідь» ---------- */
+  function playFlow() {
+    const f = $('flow');
+    f.classList.remove('play'); void f.offsetWidth;
+    setTimeout(() => f.classList.add('play'), 250);
+  }
+  $('flowReplay').onclick = (e) => { playFlow(); e.currentTarget.blur(); };
+
+  /* ---------- слайд 7: розмова зі справжнім сервером ---------- */
+  const SAMPLE = { hero: 'Герой', kills: 0, hp: 100, monster: { emoji: '🐉', name: 'Дракон', maxHp: 100 } };
+
+  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function colorize(line) {
+    return esc(line)
+      .replace(/("[^"]*")(\s*:)/g, '<span class="k">$1</span>$2')
+      .replace(/: ("[^"]*")/g, ': <span class="s">$1</span>')
+      .replace(/: (-?\d+)/g, ': <span class="n">$1</span>')
+      .replace(/: (true|false)/g, ': <span class="b">$1</span>');
+  }
+  function showJson(obj, note) {
+    const lines = JSON.stringify(obj, null, 2).split('\n').map((l, i) => '<span class="ln" style="--i:' + i + '">' + colorize(l) + '</span>');
+    if (note) lines.push('<span class="ln note" style="--i:' + lines.length + '">' + note + '</span>');
+    $('jsonOut').innerHTML = lines.join('');
+  }
+  function drawMini(state) {
+    $('miniMonster').textContent = state.monster.emoji;
+    $('miniName').textContent = state.monster.name;
+    $('miniHp').style.width = Math.max(0, Math.min(100, state.hp / state.monster.maxHp * 100)) + '%';
+    $('miniHpText').textContent = state.hp + ' / ' + state.monster.maxHp;
+  }
+  function floatDamage(damage, crit) {
+    const el = $('miniDmg');
+    el.textContent = '-' + damage + (crit ? ' КРИТ!' : '');
+    el.style.color = crit ? 'var(--accent)' : '#fff';
+    el.classList.remove('go'); void el.offsetWidth; el.classList.add('go');
+  }
+  async function callServer(method, url) {
+    if (location.protocol === 'file:') throw new Error('Сторінку відкрито як файл — сервера немає');
+    const r = await fetch(url, { method, cache: 'no-store' });
+    return JSON.parse(await r.text());
+  }
+  function offline(err) {
+    showJson(SAMPLE, 'Сервер зараз не запущено (' + esc(String(err.message || err)) + ') — ось приклад відповіді. Запусти гру: start.bat');
+    drawMini(SAMPLE);
+  }
+  async function resetLive() {
+    try { const s = await callServer('GET', '/api/state'); showJson(s); drawMini(s); } catch (e) { offline(e); }
+  }
+  $('btnAsk').onclick = async (e) => {
+    e.currentTarget.blur();
+    try { const s = await callServer('GET', '/api/state'); showJson(s); drawMini(s); } catch (err) { offline(err); }
+  };
+  $('btnHit').onclick = async (e) => {
+    e.currentTarget.blur();
+    try {
+      const r = await callServer('POST', '/api/hit');
+      showJson(r); drawMini(r.state); floatDamage(r.damage, r.crit);
+    } catch (err) { offline(err); }
+  };
+
+  /* ---------- слайд 8: таймер на 2 хвилини ---------- */
+  const TOTAL = parseInt(new URLSearchParams(location.search).get('timer'), 10) || 120;   // за замовчуванням 2:00; slides.html?timer=90 — 1:30
+  let left = TOTAL, tick = null;
+  function drawTimer() {
+    const m = Math.floor(left / 60), s = String(left % 60).padStart(2, '0');
+    $('timer').textContent = m + ':' + s;
+    $('timer').classList.toggle('low', left <= 10 && left > 0);
+  }
+  function resetTimer() {
+    clearInterval(tick); tick = null; left = TOTAL; drawTimer();
+    $('timerMsg').textContent = ''; $('timerBtn').textContent = '▶ Старт (T)';
+  }
+  function toggleTimer() {
+    if (slides[cur].dataset.enter !== 'timer') return;
+    if (tick) { clearInterval(tick); tick = null; $('timerBtn').textContent = '▶ Далі (T)'; return; }
+    if (left <= 0) resetTimer();
+    $('timerBtn').textContent = '⏸ Пауза (T)'; $('timerMsg').textContent = 'Поїхали! 🚀';
+    tick = setInterval(() => {
+      left -= 1; drawTimer();
+      if (left === 30) $('timerMsg').textContent = 'Ще 30 секунд ⏳';
+      if (left === 10) $('timerMsg').textContent = 'Зберігайте! 💾';
+      if (left <= 0) { clearInterval(tick); tick = null; $('timerMsg').textContent = 'СТОП! Підходьте до мене 🙌'; $('timerBtn').textContent = '↻ Знову'; }
+    }, 1000);
+  }
+  $('timerBtn').onclick = (e) => { toggleTimer(); e.currentTarget.blur(); };
+
+  /* ---------- старт: номер слайда береться з адреси (#3) ---------- */
+  showJson(SAMPLE);   // щоб панель JSON не була порожньою (наприклад, у PDF), поки сервер ще не питали
+  const fromHash = parseInt((location.hash || '').slice(1), 10);
+  show(!isNaN(fromHash) ? fromHash - 1 : 0);
+})();
+</script>
+</body>
+</html>

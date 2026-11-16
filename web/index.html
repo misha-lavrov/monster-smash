@@ -40,12 +40,30 @@
       <div id="log" class="log"></div>
     </section>
 
+    <form id="flagForm" class="flag" autocomplete="off">
+      <label for="flagInput">🚩 Знайшов прапорець?</label>
+      <input id="flagInput" type="text" placeholder="OIPZ&#123;…&#125;" spellcheck="false" autocapitalize="off">
+      <button type="submit">Здати</button>
+    </form>
+    <div id="flagMsg" class="flag-msg" hidden></div>
+
+  </div>
+
+  <!-- Вітання, коли прапорець знайдено -->
+  <div id="win" class="win" hidden>
+    <div class="win-card">
+      <div class="win-emoji">🏆</div>
+      <h2>Прапорець знайдено!</h2>
+      <p>Вітаємо — це твоє перше CTF-завдання.<br>
+         Так змагаються з кібербезпеки: <b>знайти сховане → здати → сервер перевіряє</b>.</p>
+      <button type="button" id="winClose">Супер! Продовжити гру</button>
+    </div>
   </div>
 
   <!--
      🕵️ Ого, ти зазирнув у код сторінки! Так роблять справжні дослідники кібербезпеки.
      Ось твій прапорець:   OIPZ{ctrl_u_is_a_superpower}
-     Покажи його викладачеві — отримаєш приз!
+     Тепер введи його внизу гри, в поле «Знайшов прапорець?» — і побачиш, що буде!
   -->
 
   <script src="app.js"></script>

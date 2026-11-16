@@ -46,10 +46,21 @@ if errorlevel 1 goto git_missing
 set "GITV=git"
 for /f "delims=" %%g in ('git --version') do set "GITV=%%g"
 echo  [ OK ] %GITV%
-goto files_check
+goto idea_check
 
 :git_missing
-echo  [WARN] git not found - fine only if the folder was copied by USB (reset then uses _original)
+echo  [WARN] git not found - fine only if the folder was copied by USB (reset then uses _original, and nothing is kept in git stash)
+
+rem ---- 2b. IntelliJ IDEA (the kids work in it) --------------------------
+:idea_check
+set "IDEA="
+for /d %%D in ("%ProgramFiles%\JetBrains\IntelliJ IDEA*" "%LocalAppData%\Programs\IntelliJ IDEA*") do if exist "%%~D\bin\idea64.exe" set "IDEA=%%~D"
+if defined IDEA goto idea_ok
+echo  [WARN] IntelliJ IDEA not found - stations are meant to use it (without it: any editor + the start.bat shortcut)
+goto files_check
+
+:idea_ok
+echo  [ OK ] IntelliJ IDEA: %IDEA%
 
 rem ---- 3. project files ------------------------------------------------
 :files_check

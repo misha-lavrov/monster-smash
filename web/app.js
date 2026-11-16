@@ -14,10 +14,10 @@ let busy = false;   // щоб не бити під час анімації см�
 // ---------------------------------------------------------------------
 //  Розмова з Java-сервером (її видно внизу сторінки)
 // ---------------------------------------------------------------------
-async function ask(method, url) {
+async function ask(method, url, body) {
   const started = performance.now();
   talk('out', '→ браузер питає:    ' + method + ' ' + url);
-  const response = await fetch(url, { method, cache: 'no-store' });
+  const response = await fetch(url, { method, body, cache: 'no-store' });
   const text = await response.text();
   const ms = Math.max(1, Math.round(performance.now() - started));
   talk('in', '← Java відповідає: ' + response.status + ' · ' + ms + ' мс · ' + text);
@@ -114,12 +114,61 @@ async function hit() {
 }
 
 $('hitBtn').addEventListener('click', () => { hit(); $('hitBtn').blur(); });
+const typing = (e) => e.target.closest && e.target.closest('input, textarea');   // у полі вводу пробіл — це пробіл, а не удар
 document.addEventListener('keydown', (e) => {
+  if (typing(e)) return;
   if ((e.code === 'Space' || e.code === 'Enter') && !e.repeat) { e.preventDefault(); hit(); }
 });
 document.addEventListener('keyup', (e) => {
+  if (typing(e)) return;
   if (e.code === 'Space' || e.code === 'Enter') e.preventDefault();
 });
+
+// ---------------------------------------------------------------------
+//  🚩 Прапорець: дитина знаходить його в коді сторінки й здає серверу.
+//  Перевіряє Java, а не браузер — так само, як у справжніх CTF.
+// ---------------------------------------------------------------------
+$('flagForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const input = $('flagInput');
+  const answer = input.value.trim();
+  if (!answer) return;
+  try {
+    const r = await ask('POST', '/api/flag', answer);
+    if (r.ok) {
+      $('flagMsg').hidden = true;
+      input.value = '';
+      celebrate();
+    } else {
+      input.classList.remove('wrong');
+      void input.offsetWidth;
+      input.classList.add('wrong');
+      const msg = $('flagMsg');
+      msg.textContent = 'Хм, не збігається. Перевір, чи скопійовано все — разом із OIPZ{ на початку та } в кінці.';
+      msg.hidden = false;
+      setTimeout(() => { msg.hidden = true; }, 5000);
+    }
+  } catch (err) {
+    // сервер не відповів — червоне попередження покаже watchServer()
+  }
+});
+
+function celebrate() {                     // вітання + дощ із емодзі
+  $('win').hidden = false;
+  const icons = ['🎉', '⭐', '🚩', '✨', '🏆', '💥'];
+  for (let i = 0; i < 46; i++) {
+    const piece = document.createElement('span');
+    piece.className = 'confetti';
+    piece.textContent = icons[i % icons.length];
+    piece.style.left = Math.round(Math.random() * 96) + 'vw';
+    piece.style.animationDuration = (2.4 + Math.random() * 2) + 's';
+    piece.style.animationDelay = (Math.random() * 0.9) + 's';
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), 5500);
+  }
+}
+$('winClose').addEventListener('click', () => { $('win').hidden = true; });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('win').hidden = true; });
 
 // ---------------------------------------------------------------------
 //  «Живе оновлення»: коли сервер перезапустився або файл змінився —
@@ -130,7 +179,7 @@ let downSince = null;
 
 async function watchServer() {
   try {
-    const response = await fetch('/api/version', { cache: 'no-store' });
+    const response = await fetch('/api/version?page=1', { cache: 'no-store' });   // ?page=1 — «це я, сторінка гри»
     const current = (await response.json()).version;
     if (version === null) version = current;
     else if (current !== version) { location.reload(); return; }
@@ -152,9 +201,9 @@ async function watchServer() {
 //  Старт
 // ---------------------------------------------------------------------
 ask('GET', '/api/state').then((s) => render(s, true)).catch(() => {});
-setInterval(watchServer, 700);
+setInterval(watchServer, 500);
 
 console.log('%c🕵️ Привіт, хакере!', 'font-size:22px;font-weight:bold;color:#ffcc00');
 console.log('Ти відкрив інструменти розробника (F12) — так роблять справжні дослідники кібербезпеки.\n' +
             'У цій грі сховано прапорець у форматі OIPZ{...}.\n' +
-            'Підказка: подивись у вихідний код сторінки (Ctrl+U).');
+            'Підказка: подивись у вихідний код сторінки (Ctrl+U). Знайдеш — здай його внизу гри.');

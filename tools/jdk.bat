@@ -6,6 +6,7 @@ rem    1) portable folder  jdk\   (copied from a USB stick - nothing to install)
 rem    2) JAVA_HOME
 rem    3) PATH
 rem    4) JDK downloaded by IntelliJ  (%USERPROFILE%\.jdks)
+rem    5) folders where JDK installers put it (Eclipse Adoptium, Java, Microsoft, Corretto, Zulu)
 rem  No "setlocal" here on purpose: the variables must stay for the caller.
 rem ----------------------------------------------------------------------
 set "JAVAC="
@@ -20,6 +21,9 @@ where javac >nul 2>nul
 if not errorlevel 1 goto on_path
 
 for /d %%D in ("%USERPROFILE%\.jdks\*") do if exist "%%~D\bin\javac.exe" call :set_jdk "%%~D"
+if defined JAVAC exit /b 0
+
+for /d %%D in ("%ProgramFiles%\Eclipse Adoptium\jdk-*" "%ProgramFiles%\Java\jdk-*" "%ProgramFiles%\Microsoft\jdk-*" "%ProgramFiles%\Amazon Corretto\jdk*" "%ProgramFiles%\Zulu\zulu-*" "C:\Java\jdk*") do if exist "%%~D\bin\javac.exe" call :set_jdk "%%~D"
 exit /b 0
 
 :portable

@@ -6,7 +6,9 @@ rem    reset.bat          reset + start the server      (the "red button")
 rem    reset.bat norun    reset only  (use it together with IntelliJ)
 rem
 rem  What is reset: ONLY the folders src and web.
-rem  How: git (git checkout + git clean).  No git?  Then the copy in _original.
+rem  How: git.  The changes are first saved into "git stash" (so nothing is lost: git stash pop
+rem        brings them back), then src and web become exactly the last commit.
+rem        No git?  Then the copy in _original is used (that copy CANNOT be undone).
 rem  Safety: on a PC without the file STATION it asks before erasing anything.
 rem ======================================================================
 chcp 65001 >nul
@@ -31,6 +33,9 @@ where git >nul 2>nul
 if errorlevel 1 goto from_copy
 if not exist "%~dp0.git" goto from_copy
 
+rem Safety net: the changes are NOT thrown away - they go to "git stash" (including new files).
+rem Bring them back later with:  git stash list   and   git stash pop
+git -c safe.directory=* -c user.name=reset -c user.email=reset@local stash push -u -q -m "reset-backup" -- src web >nul 2>nul
 git -c safe.directory=* checkout HEAD -- src web
 if errorlevel 1 goto from_copy
 git -c safe.directory=* clean -fdq -- src web

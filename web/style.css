@@ -179,6 +179,88 @@ h1 {
 .log .out { color: #7cc4ff; }
 .log .in  { color: #8dff9b; }
 
+/* ----- форма «Знайшов прапорець?» ----- */
+.flag {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .08);
+  font-size: 14px;
+}
+.flag label { flex: none; font-weight: 600; }
+.flag input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 2px solid rgba(255, 255, 255, .25);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, .35);
+  color: #fff;
+  font: 14px Consolas, "Courier New", monospace;
+}
+.flag input:focus { outline: none; border-color: var(--accent); }
+.flag input.wrong { animation: shake .3s ease; border-color: #ff4757; }
+.flag button {
+  flex: none;
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #2a1245;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.flag-msg { width: 100%; margin-top: -6px; font-size: 13px; text-align: center; color: #ffb3b3; }
+
+/* ----- вітання, коли прапорець знайдено ----- */
+.win {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(10, 4, 24, .78);
+}
+.win-card {
+  width: min(480px, 100%);
+  padding: 22px 24px;
+  border-radius: 20px;
+  text-align: center;
+  background: linear-gradient(160deg, #3a1c71, #1b1033);
+  border: 3px solid var(--accent);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, .6);
+  animation: pop .5s cubic-bezier(.2, 1.6, .4, 1);
+}
+.win-emoji { font-size: 72px; line-height: 1; }
+.win-card h2 { margin: 6px 0 8px; font-size: 28px; color: var(--accent); }
+.win-card p { margin: 0 0 14px; font-size: 16px; line-height: 1.45; }
+.win-card button {
+  padding: 10px 20px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #2a1245;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.confetti {                            /* емодзі-конфеті */
+  position: fixed;
+  top: -40px;
+  z-index: 30;
+  font-size: 28px;
+  pointer-events: none;
+  animation: fall linear forwards;
+}
+
 /* ----- попередження про сервер ----- */
 .banner {
   position: fixed;
@@ -235,3 +317,6 @@ h1 {
   to   { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.3); opacity: 0; }
 }
 @keyframes bump { 40% { transform: scale(1.6); color: var(--accent); } }
+@keyframes fall {
+  to { transform: translateY(110vh) rotate(540deg); opacity: .9; }
+}
