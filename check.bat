@@ -127,10 +127,18 @@ echo  [INFO] port 8765 is in use right now - the game is probably running, that 
 :station_info
 if exist "STATION" goto is_station
 echo  [INFO] no STATION file - this is a developer PC, reset.bat will ask before erasing
-goto summary
+goto dirty_check
 
 :is_station
 echo  [ OK ] STATION marker is present - reset.bat works without questions
+
+rem ---- 7. is the working copy the same as the last commit? (reset.bat returns to the commit)
+:dirty_check
+where git >nul 2>nul
+if errorlevel 1 goto summary
+set "DIRTY="
+for /f "delims=" %%s in ('git -c safe.directory^=* status --porcelain -- src web 2^>nul') do set "DIRTY=1"
+if defined DIRTY echo  [WARN] src\ or web\ differ from the last git commit - RESET would bring back the OLD committed version. Commit first: git add . and git commit
 
 rem ---- result ----------------------------------------------------------
 :summary

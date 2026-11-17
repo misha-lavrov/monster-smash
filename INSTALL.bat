@@ -2,9 +2,9 @@
 rem ======================================================================
 rem  INSTALL.bat  -  one double-click to prepare a PC for the masterclass
 rem
-rem    * installs Git, JDK and IntelliJ IDEA from the folder "installers"
-rem      (next to the folder monster-smash) - what is already installed is skipped
-rem    * copies the game to C:\monster-smash
+rem    * installs Git, JDK and IntelliJ IDEA from the installers folder
+rem      next to the folder monster-smash (any name) - what is already installed is skipped
+rem    * does NOT copy the game - it works right where this folder lies (for example on D:)
 rem    * creates desktop shortcuts and checks the PC
 rem
 rem  Windows will ask for permission (UAC) - press "Yes".

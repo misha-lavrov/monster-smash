@@ -164,18 +164,24 @@ h1 {
 .talk { width: 100%; }
 .talk h2 { margin: 6px 0 6px; font-size: 14px; font-weight: 600; opacity: .85; }
 .log {
-  height: 9.4em;                   /* фіксована висота: сторінка не «стрибає» */
+  height: 11em;                    /* фіксована висота: сторінка не «стрибає»; решта — прокруткою */
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;       /* найновіше — знизу, старе виштовхується вгору */
   padding: 10px 12px;
   border-radius: 12px;
   background: #0b0716;
   border: 1px solid rgba(255, 255, 255, .12);
   font: 13px/1.45 Consolas, "Courier New", monospace;
-  overflow: hidden;
+  overflow-y: auto;                /* журнал прокручується: тут лишаються останні 20 дій */
+  scrollbar-width: thin;
+  scrollbar-color: #6b56a8 #0b0716;
 }
-.log div { flex: none; white-space: pre-wrap; word-break: break-all; }
+.log::-webkit-scrollbar { width: 9px; }
+.log::-webkit-scrollbar-track { background: #0b0716; }
+.log::-webkit-scrollbar-thumb { background: #6b56a8; border-radius: 5px; }
+.log .act { flex: none; margin-top: 5px; padding-top: 5px; border-top: 1px dashed rgba(255, 255, 255, .14); }
+.log .act:first-child { margin-top: auto; padding-top: 0; border-top: 0; }   /* поки дій мало — вони притиснуті до низу */
+.log .act > div { white-space: pre-wrap; word-break: break-all; }
 .log .out { color: #7cc4ff; }
 .log .in  { color: #8dff9b; }
 
@@ -286,7 +292,7 @@ h1 {
   .monster-name { font-size: 19px; margin-bottom: 4px; }
   .hpbar { height: 26px; }
   .hit { padding: 9px 20px; font-size: 24px; }
-  .log { height: 8.2em; }
+  .log { height: 9.2em; }
 }
 
 /* ----- анімації ----- */

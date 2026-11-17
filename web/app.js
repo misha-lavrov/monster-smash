@@ -12,25 +12,37 @@ let state = null;   // що ми знаємо про гру (воно прихо
 let busy = false;   // щоб не бити під час анімації смерті монстра
 
 // ---------------------------------------------------------------------
-//  Розмова з Java-сервером (її видно внизу сторінки)
+//  Розмова з Java-сервером (її видно внизу сторінки).
+//  Одна «дія» = один запит + одна відповідь. Журнал можна прокручувати:
+//  він пам'ятає останні 20 дій (а скролити можна мишею чи коліщатком).
 // ---------------------------------------------------------------------
+const MAX_ACTIONS = 20;
+
+function startAct() {                       // нова «дія» в журналі; повертає функцію, що дописує в неї рядки
+  const log = $('log');
+  const act = document.createElement('div');
+  act.className = 'act';
+  log.appendChild(act);
+  while (log.children.length > MAX_ACTIONS) log.firstChild.remove();
+  return (kind, text) => {
+    const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 16;   // читач не прокрутив угору?
+    const line = document.createElement('div');
+    line.className = kind;
+    line.textContent = text;
+    act.appendChild(line);
+    if (atBottom) log.scrollTop = log.scrollHeight;                              // тоді стежимо за найновішим
+  };
+}
+
 async function ask(method, url, body) {
   const started = performance.now();
-  talk('out', '→ браузер питає:    ' + method + ' ' + url);
+  const say = startAct();
+  say('out', '→ браузер питає:    ' + method + ' ' + url);
   const response = await fetch(url, { method, body, cache: 'no-store' });
   const text = await response.text();
   const ms = Math.max(1, Math.round(performance.now() - started));
-  talk('in', '← Java відповідає: ' + response.status + ' · ' + ms + ' мс · ' + text);
+  say('in', '← Java відповідає: ' + response.status + ' · ' + ms + ' мс · ' + text);
   return JSON.parse(text);
-}
-
-function talk(kind, text) {
-  const log = $('log');
-  const line = document.createElement('div');
-  line.className = kind;
-  line.textContent = text;
-  log.appendChild(line);
-  while (log.children.length > 6) log.firstChild.remove();
 }
 
 // ---------------------------------------------------------------------

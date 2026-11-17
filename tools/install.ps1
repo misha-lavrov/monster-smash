@@ -2,9 +2,9 @@
 #  МАЙСТЕР-КЛАС «Побий монстра!» — підготовка ПК одним подвійним кліком (INSTALL.bat)
 #
 #  Що робить:
-#    1) шукає інсталятори Git, JDK і IntelliJ IDEA у папці  installers\  (поруч із папкою monster-smash)
+#    1) шукає інсталятори Git, JDK і IntelliJ IDEA в сусідніх папках (поруч із папкою monster-smash; назва папки неважлива)
 #    2) встановлює те, чого на ПК ще немає (потрібен адміністратор — Windows спитає про дозвіл)
-#    3) копіює гру в  C:\monster-smash
+#    3) гру НЕ копіює: вона працює там, де лежить (наприклад, у папці на диску D:, куди ти скопіював усе заздалегідь)
 #    4) створює ярлики на робочому столі й перевіряє ПК (setup-station.bat → check.bat)
 #    5) за наявності ide-config.zip — готує налаштування IntelliJ (щоб не клікати «Далі» на кожному ПК)
 #
@@ -12,7 +12,7 @@
 #
 #  Змінні для тестів (звичайним користувачам не потрібні):
 #    OIPZ_DRYRUN=1  — нічого не встановлювати, лише показати команди     OIPZ_FORCE=1 — встановлювати, навіть якщо вже є
-#    OIPZ_TARGET=…  — інша папка замість C:\monster-smash                 OIPZ_NOELEVATE=1 — не просити права адміністратора
+#    OIPZ_TARGET=…  — скопіювати гру в цю папку (за замовчуванням — НЕ копіювати)   OIPZ_NOELEVATE=1 — не просити права адміністратора
 #    OIPZ_NOASK=1   — не ставити запитань
 # =====================================================================================
 
@@ -25,7 +25,7 @@ $noElev  = [bool]$env:OIPZ_NOELEVATE
 $noAsk   = [bool]$env:OIPZ_NOASK
 $phase   = if ($env:OIPZ_PHASE) { $env:OIPZ_PHASE } else { 'user' }
 $kit     = ([string]$env:KIT_DIR).TrimEnd('\')
-$target  = if ($env:OIPZ_TARGET) { $env:OIPZ_TARGET } else { 'C:\monster-smash' }
+$target  = if ($env:OIPZ_TARGET) { $env:OIPZ_TARGET } else { $kit }       # за замовчуванням гра працює «на місці», без копіювання
 $repoUrl = 'https://github.com/misha-lavrov/monster-smash.git'
 $logDir  = if ($env:ProgramData -and (Test-Path $env:ProgramData)) { $env:ProgramData } else { $env:TEMP }
 $logFile = Join-Path $logDir ("monster-install-{0}.log" -f $phase)
@@ -46,10 +46,13 @@ function Test-Admin {
     (New-Object Security.Principal.WindowsPrincipal $id).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
-# Шукає інсталятор за шаблонами в папках: installers\ поруч, installers\ на рівень вище, корінь флешки, сама папка
+# Шукає інсталятор за шаблонами: у папці installers всередині гри, у папці над грою, у ВСІХ сусідніх папках
+# (щоб назва папки з інсталяторами була будь-яка, наприклад «3-інсталятори») і в самій папці гри
 function Find-Installer([string[]]$patterns) {
     $parent = Split-Path $kit -Parent
-    $dirs = @("$kit\installers", "$parent\installers", $parent, $kit) | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -Unique
+    $siblings = @()
+    if ($parent) { $siblings = @(Get-ChildItem -LiteralPath $parent -Directory -ErrorAction SilentlyContinue | Where-Object { $_.FullName -ne $kit } | Select-Object -ExpandProperty FullName) }
+    $dirs = (@("$kit\installers", "$parent\installers", $parent) + $siblings + @($kit)) | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -Unique
     foreach ($dir in $dirs) {
         foreach ($pattern in $patterns) {
             $found = Get-ChildItem -LiteralPath $dir -Filter $pattern -File -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
@@ -174,8 +177,8 @@ Say '=====================================================' 'Cyan'
 if ($dry) { Say '   (ПРОБНИЙ ЗАПУСК: програми не встановлюються)' 'Yellow' }
 
 Step '1/5  Що знайдено'
-Say ("  Папка гри (звідки копіюємо) : {0}" -f $kit)
-Say ("  Куди копіюємо               : {0}" -f $target)
+Say ("  Папка гри                   : {0}" -f $kit)
+if ($target -ne $kit) { Say ("  Копіюємо гру в              : {0}" -f $target) }
 foreach ($row in @(@('Git', $gitFile), @('JDK (msi)', $jdkMsi), @('JDK (exe)', $jdkExe), @('JDK (zip)', $jdkZip), @('IntelliJ IDEA', $ideaFile), @('Налаштування IDE', $ideCfg))) {
     if ($row[1]) { Say ("  {0,-17}: {1}" -f $row[0], $row[1].Name) } else { Say ("  {0,-17}: —" -f $row[0]) 'DarkGray' }
 }
@@ -203,11 +206,18 @@ if (-not $anyInstall) {
 }
 Refresh-Env
 
-Step '3/5  Копіюю гру'
+Step '3/5  Папка гри'
 $sameFolder = $false
 try { $sameFolder = ((Resolve-Path -LiteralPath $kit).Path.TrimEnd('\') -ieq (Resolve-Path -LiteralPath $target -ErrorAction Stop).Path.TrimEnd('\')) } catch { }
 if ($sameFolder) {
-    Ok 'Гра вже лежить у цій папці'
+    if (Test-Path -LiteralPath "$kit\src\Main.java") { Ok ("Гра вже лежить тут — копіювати нічого не треба: {0}" -f $kit) }
+    else { Bad ("У цій папці немає файлів гри (src\Main.java). Скопіюй на комп'ютер усю папку цілком і запусти INSTALL.bat звідти: {0}" -f $kit) }
+    try {                                   # гра на флешці працюватиме, але повільно й ненадійно
+        if ((New-Object IO.DriveInfo (Split-Path $kit -Qualifier)).DriveType -eq 'Removable') {
+            Warn 'Папка лежить на змінному носії (флешці). Краще скопіювати її на диск D: і запускати звідти.'
+        }
+    } catch { }
+    if ($kit -match '[^\u0000-\u007F]') { Say '  [INFO] У шляху є кирилиця. Зазвичай це працює, але надійніше латиницею, наприклад D:\masterclass\monster-smash' 'DarkGray' }
 } elseif (Test-Path -LiteralPath "$kit\src\Main.java") {
     robocopy $kit $target /E /XD installers out jdk _original /XF STATION .server.pid .server-*.pid ide-config.zip /NFL /NDL /NJH /NJS /NP | Out-Null
     if ($LASTEXITCODE -lt 8) { Ok ("Гру скопійовано в {0}" -f $target) } else { Bad ("robocopy повернув код {0}" -f $LASTEXITCODE) }
@@ -281,9 +291,9 @@ Say ''
 if ($gitOk -and $jdkOk -and $ideaOk -and $gameOk) { Say '  ВСЕ ГОТОВО.' 'Green' } else { Say '  Є проблеми — дивись рядки [FAIL]/НЕМАЄ вище. Лог: ' 'Yellow'; Say ('  ' + $logFile) 'Yellow' }
 Say ''
 Say '  Що далі (перший раз на цьому ПК):' 'White'
-Say '    1. Відкрий IntelliJ IDEA → File → Open → папка C:\monster-smash → «New Window» → «Trust Project».'
+Say ("    1. Відкрий IntelliJ IDEA → File → Open → папка {0} → «New Window» → «Trust Project»." -f $target)
 Say '    2. Якщо напише «Project JDK is not defined» — натисни Setup JDK і вибери встановлений JDK.'
-Say '    3. Натисни зелений ▶ «Запустити гру» — гра відкриється в Chrome сама.'
+Say '    3. Двічі клікни на робочому столі «▶ ЗАПУСТИТИ гру» — відкриється Chrome з грою. Далі діти натискають зелений ▶ в IntelliJ.'
 
 if ($ideaOk -and $gameOk -and -not $noAsk -and -not $dry) {
     Say ''
